@@ -26,6 +26,8 @@ class MaintenanceService < ApplicationRecord
 
   # Callbacks
   before_validation :set_completed_at_when_completed, if: :status_changing_to_completed?
+  after_save :update_vehicle_status
+  after_destroy :update_vehicle_status
 
   private
 
@@ -51,5 +53,9 @@ class MaintenanceService < ApplicationRecord
 
   def setting_completed_at?
     status_changed? && completed? && completed_at.blank?
+  end
+
+  def update_vehicle_status
+    vehicle.update_maintenance_status!
   end
 end

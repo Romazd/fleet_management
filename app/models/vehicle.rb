@@ -41,6 +41,16 @@ class Vehicle < ApplicationRecord
   # Callbacks
   before_validation :normalize_attributes
 
+  def update_maintenance_status!
+    has_pending_maintenance = maintenance_services.where(status: [:pending, :in_progress]).exists?
+
+    if has_pending_maintenance && !in_maintenance?
+      update!(status: :in_maintenance)
+    elsif !has_pending_maintenance && in_maintenance?
+      update!(status: :active)
+    end
+  end
+
   private
 
   def normalize_attributes
