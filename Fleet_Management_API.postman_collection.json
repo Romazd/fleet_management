@@ -1,0 +1,856 @@
+{
+  "info": {
+    "_postman_id": "fleet-management-api",
+    "name": "Fleet Management API",
+    "description": "Colección completa para probar la API de gestión de flotas con autenticación JWT",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-login si no hay token o si expiró",
+          "const tokenExpiry = pm.collectionVariables.get('tokenExpiry');",
+          "const now = new Date().getTime();",
+          "",
+          "if (!pm.collectionVariables.get('token') || !tokenExpiry || now > tokenExpiry) {",
+          "    console.log('Token expirado o no existe, obteniendo nuevo token...');",
+          "    ",
+          "    const loginRequest = {",
+          "        url: pm.collectionVariables.get('baseUrl') + '/api/v1/auth/login',",
+          "        method: 'POST',",
+          "        header: {",
+          "            'Content-Type': 'application/json'",
+          "        },",
+          "        body: {",
+          "            mode: 'raw',",
+          "            raw: JSON.stringify({",
+          "                email: pm.collectionVariables.get('adminEmail'),",
+          "                password: pm.collectionVariables.get('adminPassword')",
+          "            })",
+          "        }",
+          "    };",
+          "    ",
+          "    pm.sendRequest(loginRequest, (err, res) => {",
+          "        if (!err && res.code === 200) {",
+          "            const response = res.json();",
+          "            pm.collectionVariables.set('token', response.token);",
+          "            // Token expira en 24 horas",
+          "            pm.collectionVariables.set('tokenExpiry', now + (24 * 60 * 60 * 1000));",
+          "            console.log('Nuevo token obtenido exitosamente');",
+          "        } else {",
+          "            console.error('Error al obtener token:', err || res.code);",
+          "        }",
+          "    });",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Tests globales para todas las peticiones",
+          "pm.test('El tiempo de respuesta es menor a 1000ms', () => {",
+          "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+          "});",
+          "",
+          "if (pm.response.code !== 204) {",
+          "    pm.test('La respuesta es JSON válido', () => {",
+          "        pm.response.to.have.jsonBody();",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "adminEmail",
+      "value": "admin@fleet.com",
+      "type": "string"
+    },
+    {
+      "key": "adminPassword",
+      "value": "password123",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenExpiry",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "vehicleId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "serviceId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Autenticación",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene token', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('token');",
+                  "    pm.expect(response.token).to.be.a('string');",
+                  "    ",
+                  "    // Guardar token para usar en otras peticiones",
+                  "    pm.collectionVariables.set('token', response.token);",
+                  "    const now = new Date().getTime();",
+                  "    pm.collectionVariables.set('tokenExpiry', now + (24 * 60 * 60 * 1000));",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene información del usuario', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('user');",
+                  "    pm.expect(response.user).to.have.property('email');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"{{adminEmail}}\",\n    \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Endpoint de autenticación para obtener JWT token"
+          },
+          "response": []
+        },
+        {
+          "name": "Login - Credenciales Inválidas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 401', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene mensaje de error', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"wrong@email.com\",\n    \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "Test de login con credenciales incorrectas"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "Listar Vehículos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene array de vehículos', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('vehicles');",
+                  "    pm.expect(response.vehicles).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene metadata de paginación', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('meta');",
+                  "    pm.expect(response.meta).to.have.property('current_page');",
+                  "    pm.expect(response.meta).to.have.property('total_count');",
+                  "});",
+                  "",
+                  "// Guardar primer ID para usar en otros tests",
+                  "const response = pm.response.json();",
+                  "if (response.vehicles && response.vehicles.length > 0) {",
+                  "    pm.collectionVariables.set('vehicleId', response.vehicles[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "per_page",
+                  "value": "10",
+                  "disabled": true
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "disabled": true
+                },
+                {
+                  "key": "brand",
+                  "value": "Toyota",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "ABC",
+                  "disabled": true
+                },
+                {
+                  "key": "order_by",
+                  "value": "created_at",
+                  "disabled": true
+                },
+                {
+                  "key": "order_direction",
+                  "value": "desc",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Obtener lista de vehículos con paginación y filtros opcionales"
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Vehículo creado correctamente', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('vin');",
+                  "    pm.expect(response).to.have.property('plate');",
+                  "    ",
+                  "    // Guardar ID para usar en otros tests",
+                  "    pm.collectionVariables.set('vehicleId', response.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generar VIN y placa únicos",
+                  "const timestamp = new Date().getTime();",
+                  "const randomVin = 'VIN' + timestamp;",
+                  "const randomPlate = 'PLT' + Math.floor(Math.random() * 9999);",
+                  "",
+                  "pm.variables.set('randomVin', randomVin);",
+                  "pm.variables.set('randomPlate', randomPlate);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"vehicle\": {\n        \"vin\": \"{{randomVin}}\",\n        \"plate\": \"{{randomPlate}}\",\n        \"brand\": \"Toyota\",\n        \"model\": \"Corolla\",\n        \"year\": 2023,\n        \"status\": \"active\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles"]
+            },
+            "description": "Crear un nuevo vehículo"
+          },
+          "response": []
+        },
+        {
+          "name": "Ver Vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene datos del vehículo', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('vin');",
+                  "    pm.expect(response).to.have.property('plate');",
+                  "    pm.expect(response).to.have.property('brand');",
+                  "    pm.expect(response).to.have.property('model');",
+                  "    pm.expect(response).to.have.property('year');",
+                  "    pm.expect(response).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test('Respuesta incluye servicios de mantenimiento', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('maintenance_services');",
+                  "    pm.expect(response.maintenance_services).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{vehicleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles", "{{vehicleId}}"]
+            },
+            "description": "Obtener detalles de un vehículo específico"
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar Vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Vehículo actualizado correctamente', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.model).to.equal('Camry');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"vehicle\": {\n        \"model\": \"Camry\",\n        \"status\": \"active\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{vehicleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles", "{{vehicleId}}"]
+            },
+            "description": "Actualizar información de un vehículo"
+          },
+          "response": []
+        },
+        {
+          "name": "Eliminar Vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 204', () => {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{vehicleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles", "{{vehicleId}}"]
+            },
+            "description": "Eliminar un vehículo (también elimina sus servicios de mantenimiento)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Maintenance Services",
+      "item": [
+        {
+          "name": "Listar Servicios de un Vehículo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta es un array de servicios', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.be.an('array');",
+                  "});",
+                  "",
+                  "// Guardar ID del primer servicio si existe",
+                  "const response = pm.response.json();",
+                  "if (response.length > 0) {",
+                  "    pm.collectionVariables.set('serviceId', response[0].id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{vehicleId}}/maintenance_services",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles", "{{vehicleId}}", "maintenance_services"]
+            },
+            "description": "Obtener todos los servicios de mantenimiento de un vehículo"
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Servicio de Mantenimiento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Servicio creado correctamente', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    pm.expect(response).to.have.property('description');",
+                  "    pm.expect(response).to.have.property('status');",
+                  "    pm.expect(response).to.have.property('priority');",
+                  "    ",
+                  "    // Guardar ID para usar en otros tests",
+                  "    pm.collectionVariables.set('serviceId', response.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generar fecha actual o pasada",
+                  "const today = new Date();",
+                  "const dateStr = today.toISOString().split('T')[0];",
+                  "pm.variables.set('currentDate', dateStr);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"maintenance_service\": {\n        \"description\": \"Cambio de aceite y filtros\",\n        \"status\": \"pending\",\n        \"date\": \"{{currentDate}}\",\n        \"cost_cents\": 5000,\n        \"priority\": \"medium\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/{{vehicleId}}/maintenance_services",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles", "{{vehicleId}}", "maintenance_services"]
+            },
+            "description": "Crear un nuevo servicio de mantenimiento para un vehículo"
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar Servicio de Mantenimiento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Servicio actualizado correctamente', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.status).to.equal('completed');",
+                  "    pm.expect(response).to.have.property('completed_at');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"maintenance_service\": {\n        \"status\": \"completed\",\n        \"cost_cents\": 7500\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/maintenance_services/{{serviceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "maintenance_services", "{{serviceId}}"]
+            },
+            "description": "Actualizar un servicio de mantenimiento"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Reporte de Resumen de Mantenimiento",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 200', () => {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene estructura de reporte', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('report');",
+                  "    pm.expect(response.report).to.have.property('period');",
+                  "    pm.expect(response.report).to.have.property('summary');",
+                  "    pm.expect(response.report).to.have.property('by_status');",
+                  "    pm.expect(response.report).to.have.property('by_vehicle');",
+                  "    pm.expect(response.report).to.have.property('top_vehicles_by_cost');",
+                  "});",
+                  "",
+                  "pm.test('Summary contiene métricas correctas', () => {",
+                  "    const summary = pm.response.json().report.summary;",
+                  "    pm.expect(summary).to.have.property('total_orders');",
+                  "    pm.expect(summary).to.have.property('total_cost_cents');",
+                  "    pm.expect(summary).to.have.property('average_cost_cents');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Configurar rango de fechas (últimos 30 días)",
+                  "const endDate = new Date();",
+                  "const startDate = new Date();",
+                  "startDate.setDate(startDate.getDate() - 30);",
+                  "",
+                  "const fromDate = startDate.toISOString().split('T')[0];",
+                  "const toDate = endDate.toISOString().split('T')[0];",
+                  "",
+                  "pm.variables.set('fromDate', fromDate);",
+                  "pm.variables.set('toDate', toDate);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/maintenance_summary?from={{fromDate}}&to={{toDate}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "maintenance_summary"],
+              "query": [
+                {
+                  "key": "from",
+                  "value": "{{fromDate}}",
+                  "description": "Fecha de inicio (YYYY-MM-DD)"
+                },
+                {
+                  "key": "to",
+                  "value": "{{toDate}}",
+                  "description": "Fecha de fin (YYYY-MM-DD)"
+                }
+              ]
+            },
+            "description": "Obtener reporte agregado de servicios de mantenimiento en un rango de fechas"
+          },
+          "response": []
+        },
+        {
+          "name": "Reporte - Error sin fechas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 400', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene mensaje de error', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error).to.have.property('code');",
+                  "    pm.expect(response.error).to.have.property('message');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/reports/maintenance_summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "reports", "maintenance_summary"]
+            },
+            "description": "Test de validación: reporte sin fechas requeridas"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Casos de Error",
+      "item": [
+        {
+          "name": "Petición sin Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 401', () => {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta indica falta de autorización', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles"]
+            },
+            "description": "Test de acceso sin autenticación"
+          },
+          "response": []
+        },
+        {
+          "name": "Vehículo No Encontrado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 404', () => {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene mensaje de error', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('error');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles/999999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles", "999999"]
+            },
+            "description": "Test de vehículo inexistente"
+          },
+          "response": []
+        },
+        {
+          "name": "Crear Vehículo - Validación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 422', () => {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta contiene errores de validación', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('error');",
+                  "    pm.expect(response.error).to.have.property('details');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"vehicle\": {\n        \"vin\": \"\",\n        \"plate\": \"\",\n        \"brand\": \"Toyota\",\n        \"model\": \"Corolla\",\n        \"year\": 1980\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles"]
+            },
+            "description": "Test de validación al crear vehículo con datos inválidos"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
