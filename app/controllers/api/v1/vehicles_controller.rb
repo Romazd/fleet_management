@@ -73,7 +73,7 @@ module Api
       end
 
       def filter_vehicles
-        vehicles = Vehicle.all
+        vehicles = Vehicle.includes(:maintenance_services).all
         vehicles = vehicles.by_status(params[:status])
         vehicles = vehicles.by_brand(params[:brand])
         vehicles = vehicles.by_year(params[:year])
