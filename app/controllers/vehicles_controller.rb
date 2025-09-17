@@ -1,8 +1,10 @@
 class VehiclesController < ApplicationController
+  include Pagy::Backend
+
   before_action :set_vehicle, only: [:show, :edit, :update, :destroy]
 
   def index
-    @vehicles = Vehicle.ordered
+    @pagy, @vehicles = pagy(Vehicle.includes(:maintenance_services).ordered, limit: params[:per_page] || 20)
   end
 
   def show

@@ -41,6 +41,16 @@
         <% end %>
       </tbody>
     </table>
+
+    <% if @pagy %>
+      <div class="pagination-container">
+        <%= pagy_nav(@pagy).html_safe %>
+      </div>
+
+      <div class="pagination-info">
+        <p>Mostrando <%= @pagy.from %> - <%= @pagy.to %> de <%= @pagy.count %> vehículos</p>
+      </div>
+    <% end %>
   <% else %>
     <p class="empty-message">No se encontraron vehículos. <%= link_to 'Crear el primero', new_vehicle_path %>.</p>
   <% end %>
