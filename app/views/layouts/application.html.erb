@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Fleet Management System</title>
+    <title><%= t('app.title') %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
@@ -282,7 +282,7 @@
   <body>
     <nav class="navbar">
       <div class="container">
-        <h1><%= link_to 'Fleet Management System', root_path %></h1>
+        <h1><%= link_to t('app.title'), root_path %></h1>
       </div>
     </nav>
 
