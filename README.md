@@ -6,8 +6,8 @@ Sistema integral de gestión de flotas vehiculares con API REST y vistas HTML. P
 
 ```bash
 # 1. Clonar el repositorio
-git clone <repository-url>
-cd fleet_management_api
+git clone https://github.com/Romazd/fleet_management.git
+cd fleet_management
 
 # 2. Instalar dependencias
 bundle install
@@ -56,8 +56,8 @@ rails server
 ### 1. Clonar el repositorio
 
 ```bash
-git clone <repository-url>
-cd fleet_management_api
+git clone https://github.com/Romazd/fleet_management.git
+cd fleet_management
 ```
 
 ### 2. Instalar dependencias
