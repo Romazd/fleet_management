@@ -1,6 +1,10 @@
 require 'rails_helper'
 
 RSpec.describe Vehicle, type: :model do
+  describe 'associations' do
+    it { should have_many(:maintenance_services).dependent(:destroy) }
+  end
+
   describe 'validations' do
     subject { build(:vehicle) }
 

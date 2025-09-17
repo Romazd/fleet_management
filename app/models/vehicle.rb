@@ -1,4 +1,7 @@
 class Vehicle < ApplicationRecord
+  # Associations
+  has_many :maintenance_services, dependent: :destroy
+
   # Enums
   enum status: {
     active: 0,
