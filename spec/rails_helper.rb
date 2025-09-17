@@ -7,6 +7,8 @@ require 'rspec/rails'
 require 'factory_bot_rails'
 require 'database_cleaner/active_record'
 
+Dir[Rails.root.join('spec', 'support', '**', '*.rb')].sort.each { |f| require f }
+
 begin
   ActiveRecord::Migration.maintain_test_schema!
 rescue ActiveRecord::PendingMigrationError => e
