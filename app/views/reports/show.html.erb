@@ -1,5 +1,5 @@
 <div class="container">
-  <h1>Descargar Reporte de Mantenimiento</h1>
+  <h1>Descargar Reportes de Mantenimiento</h1>
 
   <div class="card">
     <%= form_with url: report_path(format: :csv), method: :get, local: true do |form| %>
@@ -13,6 +13,21 @@
         <%= form.date_field :to, value: @to_date, max: Date.current, class: 'form-control', required: true %>
       </div>
 
+      <div class="form-group">
+        <%= form.label :report_type, "Tipo de Reporte:" %>
+        <%= form.select :report_type,
+            options_for_select([
+              ['Detalle de Servicios', 'services'],
+              ['Detalle de Vehículos', 'vehicles'],
+              ['Resumen General', 'summary_metrics'],
+              ['Análisis por Estado', 'status'],
+              ['Análisis por Prioridad', 'priority'],
+              ['Top 10 Vehículos por Costo', 'top_vehicles']
+            ], @report_type),
+            {},
+            { class: 'form-control' } %>
+      </div>
+
       <div class="form-actions">
         <%= form.submit "Descargar CSV", class: 'btn btn-primary' %>
         <%= link_to "Volver a Vehículos", vehicles_path, class: 'btn btn-secondary' %>
@@ -21,15 +36,63 @@
   </div>
 
   <div class="info-card">
-    <h3>Información del Reporte</h3>
-    <p>El reporte incluirá:</p>
-    <ul>
-      <li>Resumen general (total de órdenes, costo total y promedio)</li>
-      <li>Desglose por estado (pendiente, en progreso, completado)</li>
-      <li>Desglose por prioridad (baja, media, alta)</li>
-      <li>Top 3 vehículos por costo</li>
-      <li>Detalle completo de todos los vehículos</li>
-      <li>Listado de todos los servicios de mantenimiento</li>
-    </ul>
+    <h3>Tipos de Reportes Disponibles</h3>
+
+    <div class="report-type">
+      <h4>🔧 Detalle de Servicios</h4>
+      <ul>
+        <li>Listado completo de todos los servicios de mantenimiento</li>
+        <li>Información del vehículo (VIN, placa, marca, modelo)</li>
+        <li>Descripción, estado, prioridad y costo de cada servicio</li>
+        <li>Ideal para análisis detallado y auditoría</li>
+      </ul>
+    </div>
+
+    <div class="report-type">
+      <h4>🚗 Detalle de Vehículos</h4>
+      <ul>
+        <li>Un registro por vehículo con servicios en el período</li>
+        <li>Conteo de servicios por estado (pendientes, en progreso, completados)</li>
+        <li>Costo total acumulado por vehículo</li>
+        <li>Estado actual del vehículo</li>
+      </ul>
+    </div>
+
+    <div class="report-type">
+      <h4>📊 Resumen General</h4>
+      <ul>
+        <li>Una sola fila con métricas globales</li>
+        <li>Total de órdenes, vehículos afectados</li>
+        <li>Costo total y promedio del período</li>
+        <li>Vista ejecutiva de alto nivel</li>
+      </ul>
+    </div>
+
+    <div class="report-type">
+      <h4>📈 Análisis por Estado</h4>
+      <ul>
+        <li>Desglose por estado (pendiente, en progreso, completado)</li>
+        <li>Cantidad y porcentaje de cada estado</li>
+        <li>Costo total y promedio por estado</li>
+      </ul>
+    </div>
+
+    <div class="report-type">
+      <h4>⚡ Análisis por Prioridad</h4>
+      <ul>
+        <li>Desglose por prioridad (baja, media, alta)</li>
+        <li>Cantidad y porcentaje de cada prioridad</li>
+        <li>Costo total y promedio por prioridad</li>
+      </ul>
+    </div>
+
+    <div class="report-type">
+      <h4>💰 Top 10 Vehículos por Costo</h4>
+      <ul>
+        <li>Los 10 vehículos con mayor costo de mantenimiento</li>
+        <li>Ranking, información del vehículo</li>
+        <li>Cantidad de servicios y costos (total y promedio)</li>
+      </ul>
+    </div>
   </div>
 </div>

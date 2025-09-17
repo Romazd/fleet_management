@@ -2,6 +2,7 @@ class ReportsController < ApplicationController
   def show
     @from_date = parse_date(params[:from]) || 30.days.ago.to_date
     @to_date = parse_date(params[:to]) || Date.current
+    @report_type = params[:report_type] || 'summary'
 
     respond_to do |format|
       format.html # Muestra el formulario
@@ -16,12 +17,10 @@ class ReportsController < ApplicationController
           return
         end
 
-        services = MaintenanceService
-                    .includes(:vehicle)
-                    .where(date: @from_date..@to_date)
+        csv_data = generate_csv_for_type(@report_type, @from_date, @to_date)
+        filename = report_filename(@report_type, @from_date, @to_date)
 
-        report_data = build_summary_report(services, @from_date, @to_date)
-        send_data generate_csv(services, report_data), filename: "reporte_mantenimiento_#{@from_date}_#{@to_date}.csv"
+        send_data csv_data, filename: filename, type: 'text/csv'
       end
     end
   end
@@ -35,193 +34,46 @@ class ReportsController < ApplicationController
     nil
   end
 
-  def build_summary_report(services, from_date, to_date)
-    {
-      period: {
-        from: from_date.to_s,
-        to: to_date.to_s
-      },
-      summary: {
-        total_orders: services.count,
-        total_cost_cents: services.sum(:cost_cents),
-        average_cost_cents: services.average(:cost_cents)&.to_i || 0
-      },
-      by_status: build_status_breakdown(services),
-      by_vehicle: build_vehicle_breakdown(services),
-      by_priority: build_priority_breakdown(services),
-      top_vehicles_by_cost: build_top_vehicles(services)
+  def generate_csv_for_type(report_type, from_date, to_date)
+    report_service = ReportDataService.new(from_date, to_date)
+
+    case report_type
+    when 'summary_metrics'
+      data = report_service.summary_metrics
+      CsvGeneratorService.generate_summary_metrics_csv(data)
+    when 'status'
+      data = report_service.status_report
+      CsvGeneratorService.generate_status_csv(data)
+    when 'priority'
+      data = report_service.priority_report
+      CsvGeneratorService.generate_priority_csv(data)
+    when 'top_vehicles'
+      data = report_service.top_vehicles_report
+      CsvGeneratorService.generate_top_vehicles_csv(data)
+    when 'vehicles'
+      data = report_service.vehicles_report
+      CsvGeneratorService.generate_vehicles_csv(data)
+    when 'services'
+      data = report_service.services_report
+      CsvGeneratorService.generate_services_csv(data)
+    else
+      # Por defecto, genera servicios
+      data = report_service.services_report
+      CsvGeneratorService.generate_services_csv(data)
+    end
+  end
+
+  def report_filename(report_type, from_date, to_date)
+    type_names = {
+      'summary_metrics' => 'resumen_general',
+      'status' => 'por_estado',
+      'priority' => 'por_prioridad',
+      'top_vehicles' => 'vehiculos_top',
+      'vehicles' => 'vehiculos',
+      'services' => 'servicios'
     }
-  end
 
-  def build_status_breakdown(services)
-    MaintenanceService.statuses.keys.map do |status|
-      filtered = services.select { |s| s.status == status }
-      {
-        status: status,
-        count: filtered.size,
-        total_cost_cents: filtered.sum(&:cost_cents)
-      }
-    end
-  end
-
-  def build_vehicle_breakdown(services)
-    services.group_by(&:vehicle).map do |vehicle, vehicle_services|
-      {
-        vehicle_id: vehicle.id,
-        vin: vehicle.vin,
-        plate: vehicle.plate,
-        brand: vehicle.brand,
-        model: vehicle.model,
-        total_services: vehicle_services.size,
-        total_cost_cents: vehicle_services.sum(&:cost_cents),
-        services_by_status: build_vehicle_status_breakdown(vehicle_services)
-      }
-    end.sort_by { |v| -v[:total_cost_cents] }
-  end
-
-  def build_vehicle_status_breakdown(services)
-    MaintenanceService.statuses.keys.each_with_object({}) do |status, hash|
-      count = services.count { |s| s.status == status }
-      hash[status] = count if count > 0
-    end
-  end
-
-  def build_priority_breakdown(services)
-    MaintenanceService.priorities.keys.map do |priority|
-      filtered = services.select { |s| s.priority == priority }
-      {
-        priority: priority,
-        count: filtered.size,
-        total_cost_cents: filtered.sum(&:cost_cents)
-      }
-    end
-  end
-
-  def build_top_vehicles(services, limit = 3)
-    services
-      .group_by(&:vehicle)
-      .map do |vehicle, vehicle_services|
-        {
-          vehicle_id: vehicle.id,
-          vin: vehicle.vin,
-          plate: vehicle.plate,
-          brand: vehicle.brand,
-          model: vehicle.model,
-          total_cost_cents: vehicle_services.sum(&:cost_cents),
-          services_count: vehicle_services.size
-        }
-      end
-      .sort_by { |v| -v[:total_cost_cents] }
-      .first(limit)
-  end
-
-  def generate_csv(services, report_data)
-    require 'csv'
-
-    CSV.generate(headers: true) do |csv|
-      # Encabezados
-      csv << ['Reporte de Mantenimiento']
-      csv << ["Período: #{report_data[:period][:from]} al #{report_data[:period][:to]}"]
-      csv << []
-
-      # Resumen
-      csv << ['Resumen']
-      csv << ['Total de Órdenes', report_data[:summary][:total_orders]]
-      csv << ['Costo Total', format_currency(report_data[:summary][:total_cost_cents])]
-      csv << ['Costo Promedio', format_currency(report_data[:summary][:average_cost_cents])]
-      csv << []
-
-      # Por Estado
-      csv << ['Desglose por Estado']
-      csv << ['Estado', 'Cantidad', 'Costo Total']
-      report_data[:by_status].each do |status|
-        csv << [
-          translate_status(status[:status]),
-          status[:count],
-          format_currency(status[:total_cost_cents])
-        ]
-      end
-      csv << []
-
-      # Por Prioridad
-      csv << ['Desglose por Prioridad']
-      csv << ['Prioridad', 'Cantidad', 'Costo Total']
-      report_data[:by_priority].each do |priority|
-        csv << [
-          translate_priority(priority[:priority]),
-          priority[:count],
-          format_currency(priority[:total_cost_cents])
-        ]
-      end
-      csv << []
-
-      # Top Vehículos
-      csv << ['Top 3 Vehículos por Costo']
-      csv << ['VIN', 'Placa', 'Marca', 'Modelo', 'Cantidad de Servicios', 'Costo Total']
-      report_data[:top_vehicles_by_cost].each do |vehicle|
-        csv << [
-          vehicle[:vin],
-          vehicle[:plate],
-          vehicle[:brand],
-          vehicle[:model],
-          vehicle[:services_count],
-          format_currency(vehicle[:total_cost_cents])
-        ]
-      end
-      csv << []
-
-      # Detalle de Todos los Vehículos
-      csv << ['Detalle de Todos los Vehículos']
-      csv << ['VIN', 'Placa', 'Marca', 'Modelo', 'Total de Servicios', 'Costo Total', 'Pendientes', 'En Progreso', 'Completados']
-      report_data[:by_vehicle].each do |vehicle|
-        csv << [
-          vehicle[:vin],
-          vehicle[:plate],
-          vehicle[:brand],
-          vehicle[:model],
-          vehicle[:total_services],
-          format_currency(vehicle[:total_cost_cents]),
-          vehicle[:services_by_status]['pending'] || 0,
-          vehicle[:services_by_status]['in_progress'] || 0,
-          vehicle[:services_by_status]['completed'] || 0
-        ]
-      end
-      csv << []
-
-      # Detalle de Servicios Individuales
-      csv << ['Detalle de Servicios']
-      csv << ['Fecha', 'VIN del Vehículo', 'Placa del Vehículo', 'Descripción', 'Estado', 'Prioridad', 'Costo']
-      services.order(date: :desc).each do |service|
-        csv << [
-          service.date,
-          service.vehicle.vin,
-          service.vehicle.plate,
-          service.description,
-          translate_status(service.status),
-          translate_priority(service.priority),
-          format_currency(service.cost_cents)
-        ]
-      end
-    end
-  end
-
-  def format_currency(cents)
-    "$#{'%.2f' % (cents / 100.0)}"
-  end
-
-  def translate_status(status)
-    {
-      'pending' => 'Pendiente',
-      'in_progress' => 'En Progreso',
-      'completed' => 'Completado'
-    }[status] || status
-  end
-
-  def translate_priority(priority)
-    {
-      'low' => 'Baja',
-      'medium' => 'Media',
-      'high' => 'Alta'
-    }[priority] || priority
+    name = type_names[report_type] || 'reporte'
+    "reporte_de_#{name}_#{from_date}_#{to_date}.csv"
   end
 end
