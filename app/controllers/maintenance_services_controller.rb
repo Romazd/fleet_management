@@ -1,9 +1,11 @@
 class MaintenanceServicesController < ApplicationController
+  include Pagy::Backend
+
   before_action :set_vehicle
   before_action :set_maintenance_service, only: [:edit, :update, :destroy]
 
   def index
-    @maintenance_services = @vehicle.maintenance_services.order(date: :desc)
+    @pagy, @maintenance_services = pagy(@vehicle.maintenance_services.order(date: :desc), limit: params[:per_page] || 10)
   end
 
   def new
