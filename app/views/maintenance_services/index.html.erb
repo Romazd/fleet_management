@@ -1,0 +1,70 @@
+<div class="container">
+  <div class="header">
+    <h1><%= t('maintenance_services.index.title') %> <%= @vehicle.brand %> <%= @vehicle.model %></h1>
+    <div>
+      <%= link_to t('maintenance_services.index.new_service'), new_vehicle_maintenance_service_path(@vehicle), class: 'btn btn-primary' %>
+      <%= link_to t('vehicles.actions.back'), vehicle_path(@vehicle), class: 'btn' %>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <dl class="details-list">
+        <dt>Vehículo:</dt>
+        <dd><%= @vehicle.brand %> <%= @vehicle.model %> (<%= @vehicle.year %>)</dd>
+        <dt>VIN:</dt>
+        <dd><%= @vehicle.vin %></dd>
+        <dt>Placa:</dt>
+        <dd><%= @vehicle.plate %></dd>
+      </dl>
+    </div>
+  </div>
+
+  <% if @maintenance_services.any? %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Descripción</th>
+          <th>Estado</th>
+          <th>Prioridad</th>
+          <th>Costo</th>
+          <th>Completado el</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @maintenance_services.each do |service| %>
+          <tr>
+            <td><%= service.date %></td>
+            <td><%= service.description %></td>
+            <td>
+              <span class="status-badge status-<%= service.status %>">
+                <%= I18n.t("maintenance.status.#{service.status}", default: service.status.humanize) %>
+              </span>
+            </td>
+            <td>
+              <span class="priority-badge priority-<%= service.priority %>">
+                <%= I18n.t("maintenance.priority.#{service.priority}", default: service.priority.humanize) %>
+              </span>
+            </td>
+            <td>$<%= number_with_delimiter(service.cost_cents / 100.0, delimiter: ',') %></td>
+            <td><%= service.completed_at&.strftime("%d %b %Y") || '-' %></td>
+            <td>
+              <%= link_to t('vehicles.actions.edit'), edit_vehicle_maintenance_service_path(@vehicle, service), class: 'btn btn-sm' %>
+              <%= button_to t('vehicles.actions.delete'), vehicle_maintenance_service_path(@vehicle, service),
+                  method: :delete,
+                  data: { confirm: '¿Está seguro?' },
+                  class: 'btn btn-sm btn-danger' %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="empty-message">
+      No hay servicios de mantenimiento registrados para este vehículo.
+      <%= link_to 'Crear el primero', new_vehicle_maintenance_service_path(@vehicle) %>.
+    </p>
+  <% end %>
+</div>
