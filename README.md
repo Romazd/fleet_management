@@ -12,10 +12,12 @@ cd fleet_management
 # 2. Instalar dependencias
 bundle install
 
-# 3. Configurar master.key para desarrollo
-echo "a75f6f569a01b3182b99a09fe47e8e83" > config/master.key
+# 3. IMPORTANTE: Configurar credenciales PRIMERO (antes de cualquier comando Rails)
+rm -f config/credentials.yml.enc config/master.key
+EDITOR="code --wait" rails credentials:edit
+# Guarda y cierra el editor cuando se abra
 
-# 4. Configurar base de datos
+# 4. AHORA configurar base de datos
 rails db:create db:migrate db:seed
 
 # 5. Iniciar servidor
@@ -81,31 +83,29 @@ rails db:seed
 
 ### 4. Configurar credenciales (Rails Credentials)
 
-#### Opción A: Usar credenciales existentes (RECOMENDADO)
-El proyecto ya incluye credenciales encriptadas. Solo necesitas crear el archivo `master.key`:
+El proyecto incluye un archivo `config/credentials.yml.enc` pero necesitas generar tu propia master.key:
 
 ```bash
-# Crear archivo config/master.key con este contenido exacto:
-echo "a75f6f569a01b3182b99a09fe47e8e83" > config/master.key
-```
-
-⚠️ **IMPORTANTE**: Este `master.key` es SOLO para desarrollo/pruebas. En producción debes generar uno nuevo.
-
-#### Opción B: Generar nuevas credenciales
-Si prefieres crear tus propias credenciales:
-
-```bash
-# Eliminar credenciales existentes
-rm config/credentials.yml.enc
+# Eliminar el archivo de credenciales existente
+rm -f config/credentials.yml.enc config/master.key
 
 # Generar nuevas credenciales
-EDITOR="code --wait" rails credentials:edit
+VISUAL="code --wait" rails credentials:edit
+# O si usas vim:
+# EDITOR="vim" rails credentials:edit
+# O si usas cursor:
+# VISUAL="cursor" rails credentials:edit
 ```
 
-Asegúrate de que las credenciales incluyan:
-```yaml
-secret_key_base: <generado-automaticamente>
-```
+Rails generará automáticamente:
+- Un nuevo `config/master.key` (guárdalo de forma segura)
+- Un nuevo `config/credentials.yml.enc` con el `secret_key_base`
+
+⚠️ **IMPORTANTE**:
+- Cuando se abra el editor, verás el `secret_key_base` ya generado
+- NO necesitas modificar nada, solo guarda y cierra
+- Este `secret_key_base` se usa tanto para Rails como para generar los JWT tokens
+- La aplicación usa `Rails.application.credentials.secret_key_base` automáticamente
 
 ### 5. Iniciar el servidor
 
