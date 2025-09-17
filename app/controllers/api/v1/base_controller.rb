@@ -1,6 +1,6 @@
 module Api
   module V1
-    class BaseController < ActionController::API
+    class BaseController < Api::ApplicationController
       include Authenticable
     end
   end
