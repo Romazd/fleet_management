@@ -69,11 +69,15 @@ vehicles = []
 vehicle_stats = { active: 0, inactive: 0, in_maintenance: 0 }
 
 VEHICLE_COUNT.times do |i|
-  # Generar VIN único
-  vin = Faker::Vehicle.vin.upcase
+  # Generar VIN único (con reintentos si hay duplicado)
+  vin = nil
+  5.times do
+    vin = Faker::Vehicle.vin.upcase
+    break unless Vehicle.exists?(vin: vin)
+  end
 
-  # Generar placa única mexicana
-  plate = "MEX-#{rand(1000..9999)}"
+  # Generar placa única mexicana (usando el índice para garantizar unicidad)
+  plate = "MEX-#{sprintf('%04d', 1000 + i)}"
 
   # Seleccionar marca y modelo
   brand = BRANDS.sample
@@ -93,14 +97,20 @@ VEHICLE_COUNT.times do |i|
     'active' # Será cambiado por callbacks si tiene servicios pendientes
   end
 
-  vehicle = Vehicle.create!(
-    vin: vin,
-    plate: plate,
-    brand: brand,
-    model: model,
-    year: year,
-    status: status
-  )
+  begin
+    vehicle = Vehicle.create!(
+      vin: vin,
+      plate: plate,
+      brand: brand,
+      model: model,
+      year: year,
+      status: status
+    )
+  rescue ActiveRecord::RecordInvalid => e
+    puts "   ❌ Error creando vehículo #{i + 1}: #{e.message}"
+    puts "      VIN: #{vin}, Placa: #{plate}"
+    raise e
+  end
 
   vehicles << vehicle
 
