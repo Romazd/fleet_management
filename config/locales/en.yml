@@ -28,4 +28,70 @@
 #       enabled: "ON"
 
 en:
-  hello: "Hello world"
+  app:
+    title: "Fleet Management System"
+  vehicles:
+    created: "Vehicle was successfully created."
+    updated: "Vehicle was successfully updated."
+    destroyed: "Vehicle was successfully destroyed."
+    index:
+      title: "Vehicles"
+      new_vehicle: "New Vehicle"
+    show:
+      title: "Vehicle Details"
+      maintenance_services: "Maintenance Services"
+      add_service: "Add Service"
+      view_all: "View All"
+      no_services: "No maintenance services registered"
+    new:
+      title: "New Vehicle"
+    edit:
+      title: "Edit Vehicle"
+    form:
+      save: "Save Vehicle"
+      update: "Update Vehicle"
+      cancel: "Cancel"
+    actions:
+      view: "View"
+      edit: "Edit"
+      delete: "Delete"
+      back: "Back"
+  maintenance_services:
+    created: "Maintenance service was successfully created."
+    updated: "Maintenance service was successfully updated."
+    destroyed: "Maintenance service was successfully deleted."
+    index:
+      title: "Maintenance Services for"
+      new_service: "New Service"
+    new:
+      title: "New Maintenance Service"
+      for_vehicle: "for"
+    edit:
+      title: "Edit Maintenance Service"
+      for_vehicle: "for"
+    form:
+      save: "Save Service"
+      update: "Update Service"
+      cancel: "Cancel"
+  vehicle:
+    status:
+      active: "Active"
+      inactive: "Inactive"
+      in_maintenance: "In Maintenance"
+  maintenance:
+    status:
+      pending: "Pending"
+      in_progress: "In Progress"
+      completed: "Completed"
+    priority:
+      low: "Low"
+      medium: "Medium"
+      high: "High"
+  date:
+    formats:
+      default: "%m/%d/%Y"
+      long: "%B %d, %Y"
+  time:
+    formats:
+      default: "%m/%d/%Y %H:%M"
+      long: "%B %d, %Y at %H:%M"

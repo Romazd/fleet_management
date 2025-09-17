@@ -1,0 +1,82 @@
+es:
+  app:
+    title: "Sistema de Gestión de Flotas"
+  vehicles:
+    created: "El vehículo fue creado exitosamente."
+    updated: "El vehículo fue actualizado exitosamente."
+    destroyed: "El vehículo fue eliminado exitosamente."
+    index:
+      title: "Vehículos"
+      new_vehicle: "Nuevo Vehículo"
+    show:
+      title: "Detalles del Vehículo"
+      maintenance_services: "Servicios de Mantenimiento"
+      add_service: "Agregar Servicio"
+      view_all: "Ver Todos"
+      no_services: "No hay servicios de mantenimiento registrados"
+    new:
+      title: "Nuevo Vehículo"
+    edit:
+      title: "Editar Vehículo"
+    form:
+      save: "Guardar Vehículo"
+      update: "Actualizar Vehículo"
+      cancel: "Cancelar"
+    actions:
+      view: "Ver"
+      edit: "Editar"
+      delete: "Eliminar"
+      back: "Volver"
+  maintenance_services:
+    created: "El servicio de mantenimiento fue creado exitosamente."
+    updated: "El servicio de mantenimiento fue actualizado exitosamente."
+    destroyed: "El servicio de mantenimiento fue eliminado exitosamente."
+    index:
+      title: "Servicios de Mantenimiento para"
+      new_service: "Nuevo Servicio"
+    new:
+      title: "Nuevo Servicio de Mantenimiento"
+      for_vehicle: "para"
+    edit:
+      title: "Editar Servicio de Mantenimiento"
+      for_vehicle: "para"
+    form:
+      save: "Guardar Servicio"
+      update: "Actualizar Servicio"
+      cancel: "Cancelar"
+  vehicle:
+    status:
+      active: "Activo"
+      inactive: "Inactivo"
+      in_maintenance: "En Mantenimiento"
+  maintenance:
+    status:
+      pending: "Pendiente"
+      in_progress: "En Progreso"
+      completed: "Completado"
+    priority:
+      low: "Baja"
+      medium: "Media"
+      high: "Alta"
+  date:
+    formats:
+      default: "%d/%m/%Y"
+      long: "%d de %B de %Y"
+    month_names:
+      -
+      - Enero
+      - Febrero
+      - Marzo
+      - Abril
+      - Mayo
+      - Junio
+      - Julio
+      - Agosto
+      - Septiembre
+      - Octubre
+      - Noviembre
+      - Diciembre
+  time:
+    formats:
+      default: "%d/%m/%Y %H:%M"
+      long: "%d de %B de %Y a las %H:%M"
