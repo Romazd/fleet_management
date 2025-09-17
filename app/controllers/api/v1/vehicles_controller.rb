@@ -1,20 +1,24 @@
 module Api
   module V1
     class VehiclesController < BaseController
+      include Pagy::Backend
+
       before_action :set_vehicle, only: [:show, :update, :destroy]
 
-      # GET /api/v1/vehicles
       def index
-        @vehicles = Vehicle.all
-        render json: @vehicles
+        @vehicles = filter_vehicles
+        @pagy, @vehicles = pagy(@vehicles, limit: params[:per_page] || 20)
+
+        render json: {
+          vehicles: @vehicles,
+          meta: pagy_metadata(@pagy)
+        }
       end
 
-      # GET /api/v1/vehicles/:id
       def show
         render json: @vehicle
       end
 
-      # POST /api/v1/vehicles
       def create
         @vehicle = Vehicle.new(vehicle_params)
 
@@ -25,7 +29,6 @@ module Api
         end
       end
 
-      # PUT/PATCH /api/v1/vehicles/:id
       def update
         if @vehicle.update(vehicle_params)
           render json: @vehicle
@@ -34,7 +37,6 @@ module Api
         end
       end
 
-      # DELETE /api/v1/vehicles/:id
       def destroy
         @vehicle.destroy
         head :no_content
@@ -65,6 +67,28 @@ module Api
             details: vehicle.errors.full_messages
           }
         }, status: :unprocessable_content
+      end
+
+      def filter_vehicles
+        vehicles = Vehicle.all
+        vehicles = vehicles.by_status(params[:status])
+        vehicles = vehicles.by_brand(params[:brand])
+        vehicles = vehicles.by_year(params[:year])
+        vehicles = vehicles.by_year_range(params[:year_from], params[:year_to])
+        vehicles = vehicles.search(params[:search])
+        vehicles = vehicles.ordered(params[:sort_by], params[:sort_direction])
+        vehicles
+      end
+
+      def pagy_metadata(pagy)
+        {
+          current_page: pagy.page,
+          next_page: pagy.next,
+          prev_page: pagy.prev,
+          total_pages: pagy.pages,
+          total_count: pagy.count,
+          items_per_page: pagy.limit
+        }
       end
     end
   end

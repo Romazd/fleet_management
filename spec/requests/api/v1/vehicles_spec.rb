@@ -14,15 +14,16 @@ RSpec.describe 'Api::V1::Vehicles', type: :request do
 
           expect(response).to have_http_status(:success)
           json = JSON.parse(response.body)
-          expect(json.size).to eq(3)
+          expect(json['vehicles'].size).to eq(3)
+          expect(json['meta']).to be_present
         end
 
         it 'returns vehicles with correct attributes' do
-          vehicle = vehicles.first
+          vehicle = vehicles.last # Cambiado a last porque el orden es created_at desc
           get '/api/v1/vehicles', headers: headers
 
           json = JSON.parse(response.body)
-          first_vehicle = json.first
+          first_vehicle = json['vehicles'].first
 
           expect(first_vehicle).to include(
             'id' => vehicle.id,
@@ -42,7 +43,8 @@ RSpec.describe 'Api::V1::Vehicles', type: :request do
 
           expect(response).to have_http_status(:success)
           json = JSON.parse(response.body)
-          expect(json).to eq([])
+          expect(json['vehicles']).to eq([])
+          expect(json['meta']['total_count']).to eq(0)
         end
       end
     end
