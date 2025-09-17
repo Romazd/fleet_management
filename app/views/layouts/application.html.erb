@@ -283,16 +283,14 @@
         text-align: center;
       }
 
-      .pagy-nav {
+      .pagy.nav {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
       }
 
-      .pagy-nav .page,
-      .pagy-nav .gap,
-      .pagy-nav .prev,
-      .pagy-nav .next {
+      .pagy.nav a,
+      .pagy.nav .gap {
         display: inline-block;
         padding: 8px 12px;
         text-decoration: none;
@@ -303,28 +301,26 @@
         transition: all 0.2s;
       }
 
-      .pagy-nav .page:hover,
-      .pagy-nav .prev:hover,
-      .pagy-nav .next:hover {
+      .pagy.nav a:hover:not([aria-disabled="true"]):not(.current) {
         background-color: #007bff;
         color: white;
         border-color: #007bff;
       }
 
-      .pagy-nav .current {
+      .pagy.nav .current {
         background-color: #007bff;
         color: white;
         border-color: #007bff;
         font-weight: 600;
       }
 
-      .pagy-nav .disabled {
+      .pagy.nav a[aria-disabled="true"] {
         color: #999;
         cursor: not-allowed;
         opacity: 0.5;
       }
 
-      .pagy-nav .disabled:hover {
+      .pagy.nav a[aria-disabled="true"]:hover {
         background: white;
         color: #999;
         border-color: #ddd;
