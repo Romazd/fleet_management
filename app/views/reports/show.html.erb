@@ -1,0 +1,35 @@
+<div class="container">
+  <h1>Descargar Reporte de Mantenimiento</h1>
+
+  <div class="card">
+    <%= form_with url: report_path(format: :csv), method: :get, local: true do |form| %>
+      <div class="form-group">
+        <%= form.label :from, "Fecha Desde:" %>
+        <%= form.date_field :from, value: @from_date, max: Date.current, class: 'form-control', required: true %>
+      </div>
+
+      <div class="form-group">
+        <%= form.label :to, "Fecha Hasta:" %>
+        <%= form.date_field :to, value: @to_date, max: Date.current, class: 'form-control', required: true %>
+      </div>
+
+      <div class="form-actions">
+        <%= form.submit "Descargar CSV", class: 'btn btn-primary' %>
+        <%= link_to "Volver a Vehículos", vehicles_path, class: 'btn btn-secondary' %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="info-card">
+    <h3>Información del Reporte</h3>
+    <p>El reporte incluirá:</p>
+    <ul>
+      <li>Resumen general (total de órdenes, costo total y promedio)</li>
+      <li>Desglose por estado (pendiente, en progreso, completado)</li>
+      <li>Desglose por prioridad (baja, media, alta)</li>
+      <li>Top 3 vehículos por costo</li>
+      <li>Detalle completo de todos los vehículos</li>
+      <li>Listado de todos los servicios de mantenimiento</li>
+    </ul>
+  </div>
+</div>

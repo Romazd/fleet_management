@@ -1,4 +1,6 @@
 Rails.application.routes.draw do
+  resource :report, only: [:show]
+
   resources :vehicles do
     resources :maintenance_services, except: [:show]
   end

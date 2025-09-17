@@ -8,6 +8,7 @@ es:
     index:
       title: "Vehículos"
       new_vehicle: "Nuevo Vehículo"
+      reports: "Descarga de Reportes"
     show:
       title: "Detalles del Vehículo"
       maintenance_services: "Servicios de Mantenimiento"

@@ -37,6 +37,7 @@ en:
     index:
       title: "Vehicles"
       new_vehicle: "New Vehicle"
+      reports: "Report Downloads"
     show:
       title: "Vehicle Details"
       maintenance_services: "Maintenance Services"

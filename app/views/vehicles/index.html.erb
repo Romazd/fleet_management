@@ -1,7 +1,10 @@
 <div class="container">
   <div class="header">
     <h1><%= t('vehicles.index.title') %></h1>
-    <%= link_to t('vehicles.index.new_vehicle'), new_vehicle_path, class: 'btn btn-primary' %>
+    <div>
+      <%= link_to t('vehicles.index.reports'), report_path, class: 'btn btn-secondary' %>
+      <%= link_to t('vehicles.index.new_vehicle'), new_vehicle_path, class: 'btn btn-primary' %>
+    </div>
   </div>
 
   <% if @vehicles.any? %>
