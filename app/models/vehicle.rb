@@ -9,6 +9,23 @@ class Vehicle < ApplicationRecord
     in_maintenance: 2
   }
 
+  # Scopes
+  scope :by_status, ->(status) { where(status: status) if status.present? }
+  scope :by_brand, ->(brand) { where(brand: brand) if brand.present? }
+  scope :by_year, ->(year) { where(year: year) if year.present? }
+  scope :by_year_range, ->(from, to) { where(year: from..to) if from.present? && to.present? }
+  scope :search, lambda { |query|
+    if query.present?
+      where('lower(vin) LIKE :q OR lower(plate) LIKE :q OR lower(brand) LIKE :q OR lower(model) LIKE :q',
+            q: "%#{query.downcase}%")
+    end
+  }
+  scope :ordered, ->(column = 'created_at', direction = 'desc') {
+    column = %w[vin plate brand model year status created_at updated_at].include?(column.to_s) ? column : 'created_at'
+    direction = %w[asc desc].include?(direction.to_s) ? direction : 'desc'
+    order("#{column} #{direction}")
+  }
+
   # Validations
   validates :vin, presence: true, uniqueness: { case_sensitive: false }
   validates :plate, presence: true, uniqueness: { case_sensitive: false }
