@@ -1,5 +1,7 @@
-# Fleet Management API - Seeds
-# Este archivo crea datos de prueba para desarrollo y demostración
+# Fleet Management API - Extended Seeds
+# Genera 50 vehículos con 200+ servicios de mantenimiento para pruebas completas
+
+require 'faker'
 
 puts "🧹 Limpiando base de datos..."
 MaintenanceService.destroy_all
@@ -14,215 +16,178 @@ admin = User.create!(
 )
 puts "   ✓ Usuario creado: #{admin.email}"
 
-puts "\n🚗 Creando vehículos..."
+# Configuración
+VEHICLE_COUNT = 50
+MIN_SERVICES_PER_VEHICLE = 0  # Algunos vehículos sin servicios
+MAX_SERVICES_PER_VEHICLE = 10 # Algunos con muchos servicios
 
-# Vehículo 1: Toyota activo con mantenimientos variados
-vehicle1 = Vehicle.create!(
-  vin: '1HGBH41JXMN109186',
-  plate: 'MEX-1234',
-  brand: 'Toyota',
-  model: 'Camry',
-  year: 2020,
-  status: 'active'
-)
-puts "   ✓ #{vehicle1.brand} #{vehicle1.model} (#{vehicle1.plate})"
+# Arrays de datos para variedad
+BRANDS = ['Toyota', 'Honda', 'Ford', 'Chevrolet', 'Nissan', 'Mazda', 'Volkswagen',
+          'BMW', 'Mercedes-Benz', 'Audi', 'Hyundai', 'Kia', 'Subaru', 'Mitsubishi',
+          'Dodge', 'Ram', 'Jeep', 'GMC', 'Volvo', 'Tesla']
 
-# Vehículo 2: Honda en mantenimiento
-vehicle2 = Vehicle.create!(
-  vin: '2HGFC2F59MH543210',
-  plate: 'MEX-5678',
-  brand: 'Honda',
-  model: 'Civic',
-  year: 2021,
-  status: 'in_maintenance'
-)
-puts "   ✓ #{vehicle2.brand} #{vehicle2.model} (#{vehicle2.plate})"
+MODELS = {
+  'Toyota' => ['Camry', 'Corolla', 'RAV4', 'Highlander', 'Tacoma', 'Prius'],
+  'Honda' => ['Civic', 'Accord', 'CR-V', 'Pilot', 'Odyssey', 'Ridgeline'],
+  'Ford' => ['F-150', 'Explorer', 'Escape', 'Focus', 'Fusion', 'Mustang'],
+  'Chevrolet' => ['Silverado', 'Malibu', 'Equinox', 'Tahoe', 'Suburban', 'Camaro'],
+  'Nissan' => ['Altima', 'Sentra', 'Rogue', 'Pathfinder', 'Frontier', 'Maxima'],
+  'Default' => ['Sport', 'Sedan', 'SUV', 'Truck', 'Van', 'Coupe']
+}
 
-# Vehículo 3: Ford activo con historial de mantenimientos
-vehicle3 = Vehicle.create!(
-  vin: '3FADP4BJ7LM123456',
-  plate: 'MEX-9012',
-  brand: 'Ford',
-  model: 'Fusion',
-  year: 2019,
-  status: 'active'
-)
-puts "   ✓ #{vehicle3.brand} #{vehicle3.model} (#{vehicle3.plate})"
+SERVICE_DESCRIPTIONS = [
+  'Cambio de aceite y filtro',
+  'Rotación de llantas',
+  'Revisión de frenos',
+  'Cambio de batería',
+  'Alineación y balanceo',
+  'Cambio de filtro de aire',
+  'Cambio de bujías',
+  'Revisión de transmisión',
+  'Cambio de líquido de frenos',
+  'Servicio mayor 30,000 km',
+  'Servicio mayor 60,000 km',
+  'Servicio mayor 90,000 km',
+  'Reparación de motor',
+  'Reparación de transmisión',
+  'Cambio de amortiguadores',
+  'Cambio de correa de distribución',
+  'Diagnóstico eléctrico',
+  'Reparación de aire acondicionado',
+  'Cambio de limpiaparabrisas',
+  'Pulido de faros',
+  'Cambio de escape',
+  'Reparación de radiador',
+  'Cambio de termostato',
+  'Revisión de suspensión',
+  'Cambio de embrague'
+]
 
-# Vehículo 4: Nissan inactivo
-vehicle4 = Vehicle.create!(
-  vin: '1N4AL3AP4DC295096',
-  plate: 'MEX-3456',
-  brand: 'Nissan',
-  model: 'Altima',
-  year: 2018,
-  status: 'inactive'
-)
-puts "   ✓ #{vehicle4.brand} #{vehicle4.model} (#{vehicle4.plate})"
+puts "\n🚗 Creando #{VEHICLE_COUNT} vehículos..."
 
-# Vehículo 5: Chevrolet activo nuevo
-vehicle5 = Vehicle.create!(
-  vin: '1G1ZD5ST7KF123789',
-  plate: 'MEX-7890',
-  brand: 'Chevrolet',
-  model: 'Malibu',
-  year: 2022,
-  status: 'active'
-)
-puts "   ✓ #{vehicle5.brand} #{vehicle5.model} (#{vehicle5.plate})"
+vehicles = []
+vehicle_stats = { active: 0, inactive: 0, in_maintenance: 0 }
+
+VEHICLE_COUNT.times do |i|
+  # Generar VIN único
+  vin = Faker::Vehicle.vin.upcase
+
+  # Generar placa única mexicana
+  plate = "MEX-#{rand(1000..9999)}"
+
+  # Seleccionar marca y modelo
+  brand = BRANDS.sample
+  model = (MODELS[brand] || MODELS['Default']).sample
+
+  # Año entre 2015 y 2024
+  year = rand(2015..2024)
+
+  # Determinar estado inicial (será actualizado por callbacks si tiene servicios pendientes)
+  # 70% active, 20% inactive, 10% será in_maintenance después de agregar servicios
+  status_random = rand(100)
+  status = if status_random < 70
+    'active'
+  elsif status_random < 90
+    'inactive'
+  else
+    'active' # Será cambiado por callbacks si tiene servicios pendientes
+  end
+
+  vehicle = Vehicle.create!(
+    vin: vin,
+    plate: plate,
+    brand: brand,
+    model: model,
+    year: year,
+    status: status
+  )
+
+  vehicles << vehicle
+
+  # Mostrar progreso cada 10 vehículos
+  if (i + 1) % 10 == 0
+    print "   ✓ #{i + 1} vehículos creados...\n"
+  end
+end
+
+puts "   ✓ Total: #{vehicles.count} vehículos creados"
 
 puts "\n🔧 Creando servicios de mantenimiento..."
 
-# Servicios para Vehicle 1 (Toyota) - Historial variado
-MaintenanceService.create!(
-  vehicle: vehicle1,
-  description: 'Cambio de aceite y filtro',
-  status: 'completed',
-  date: 2.months.ago,
-  cost_cents: 150000, # $1,500
-  priority: 'medium',
-  completed_at: 2.months.ago
-)
+total_services = 0
+services_by_status = { pending: 0, in_progress: 0, completed: 0 }
 
-MaintenanceService.create!(
-  vehicle: vehicle1,
-  description: 'Rotación de llantas',
-  status: 'completed',
-  date: 1.month.ago,
-  cost_cents: 80000, # $800
-  priority: 'low',
-  completed_at: 1.month.ago
-)
+vehicles.each_with_index do |vehicle, index|
+  # Determinar número de servicios para este vehículo
+  # 10% sin servicios, 20% con muchos servicios (7-10), resto normal (1-6)
+  services_random = rand(100)
+  num_services = if services_random < 10
+    0 # Sin servicios
+  elsif services_random < 30
+    rand(7..MAX_SERVICES_PER_VEHICLE) # Muchos servicios
+  else
+    rand(1..6) # Normal
+  end
 
-MaintenanceService.create!(
-  vehicle: vehicle1,
-  description: 'Revisión de frenos - próximo servicio programado',
-  status: 'pending',
-  date: Date.current,
-  cost_cents: 250000, # $2,500
-  priority: 'high'
-)
+  num_services.times do |service_index|
+    # Fechas escalonadas hacia atrás
+    base_date = Date.current - (service_index * rand(30..90)).days
 
-# Servicios para Vehicle 2 (Honda) - En mantenimiento actual
-MaintenanceService.create!(
-  vehicle: vehicle2,
-  description: 'Reparación de transmisión',
-  status: 'in_progress',
-  date: 3.days.ago,
-  cost_cents: 850000, # $8,500
-  priority: 'high'
-)
+    # Determinar estado del servicio
+    # Para servicios más antiguos, mayor probabilidad de estar completados
+    status_random = rand(100)
+    if service_index > 3 # Servicios más antiguos
+      status = status_random < 80 ? 'completed' : 'pending'
+    else # Servicios recientes
+      status = if status_random < 40
+        'completed'
+      elsif status_random < 75
+        'pending'
+      else
+        'in_progress'
+      end
+    end
 
-MaintenanceService.create!(
-  vehicle: vehicle2,
-  description: 'Cambio de batería',
-  status: 'pending',
-  date: Date.current,
-  cost_cents: 200000, # $2,000
-  priority: 'medium'
-)
+    # Determinar prioridad
+    priority_random = rand(100)
+    priority = if priority_random < 50
+      'low'
+    elsif priority_random < 85
+      'medium'
+    else
+      'high'
+    end
 
-# Servicios para Vehicle 3 (Ford) - Historial completo
-MaintenanceService.create!(
-  vehicle: vehicle3,
-  description: 'Servicio mayor 60,000 km',
-  status: 'completed',
-  date: 6.months.ago,
-  cost_cents: 450000, # $4,500
-  priority: 'high',
-  completed_at: 6.months.ago
-)
+    # Costo en centavos (entre $200 y $15,000 pesos)
+    cost_cents = rand(20000..1500000)
 
-MaintenanceService.create!(
-  vehicle: vehicle3,
-  description: 'Cambio de aceite y filtro',
-  status: 'completed',
-  date: 3.months.ago,
-  cost_cents: 150000, # $1,500
-  priority: 'medium',
-  completed_at: 3.months.ago
-)
+    # Crear el servicio
+    service = MaintenanceService.create!(
+      vehicle: vehicle,
+      description: SERVICE_DESCRIPTIONS.sample + (rand(100) < 20 ? " - #{Faker::Lorem.sentence(word_count: 3)}" : ""),
+      status: status,
+      date: base_date,
+      cost_cents: cost_cents,
+      priority: priority,
+      completed_at: status == 'completed' ? base_date + rand(1..7).days : nil
+    )
 
-MaintenanceService.create!(
-  vehicle: vehicle3,
-  description: 'Alineación y balanceo',
-  status: 'completed',
-  date: 1.month.ago,
-  cost_cents: 120000, # $1,200
-  priority: 'low',
-  completed_at: 1.month.ago
-)
+    total_services += 1
+    services_by_status[status.to_sym] += 1
+  end
 
-MaintenanceService.create!(
-  vehicle: vehicle3,
-  description: 'Cambio de filtro de aire',
-  status: 'completed',
-  date: 2.weeks.ago,
-  cost_cents: 50000, # $500
-  priority: 'low',
-  completed_at: 2.weeks.ago
-)
+  # Mostrar progreso cada 10 vehículos
+  if (index + 1) % 10 == 0
+    print "   ✓ Servicios creados para #{index + 1} vehículos...\n"
+  end
+end
 
-# Servicios para Vehicle 4 (Nissan) - Vehículo inactivo con historial
-MaintenanceService.create!(
-  vehicle: vehicle4,
-  description: 'Reparación de motor - daño mayor',
-  status: 'completed',
-  date: 4.months.ago,
-  cost_cents: 1200000, # $12,000
-  priority: 'high',
-  completed_at: 4.months.ago
-)
+puts "   ✓ Total: #{total_services} servicios creados"
 
-MaintenanceService.create!(
-  vehicle: vehicle4,
-  description: 'Diagnóstico de fallas eléctricas',
-  status: 'completed',
-  date: 3.months.ago,
-  cost_cents: 100000, # $1,000
-  priority: 'medium',
-  completed_at: 3.months.ago
-)
-
-# Servicios para Vehicle 5 (Chevrolet) - Vehículo nuevo con mantenimientos preventivos
-MaintenanceService.create!(
-  vehicle: vehicle5,
-  description: 'Primer servicio - 5,000 km',
-  status: 'completed',
-  date: 1.month.ago,
-  cost_cents: 180000, # $1,800
-  priority: 'medium',
-  completed_at: 1.month.ago
-)
-
-MaintenanceService.create!(
-  vehicle: vehicle5,
-  description: 'Revisión de garantía',
-  status: 'pending',
-  date: Date.current,
-  cost_cents: 0, # Cubierto por garantía
-  priority: 'low'
-)
-
-# Servicios adicionales para mayor variedad
-MaintenanceService.create!(
-  vehicle: vehicle1,
-  description: 'Cambio de limpiaparabrisas',
-  status: 'completed',
-  date: 2.weeks.ago,
-  cost_cents: 40000, # $400
-  priority: 'low',
-  completed_at: 2.weeks.ago
-)
-
-MaintenanceService.create!(
-  vehicle: vehicle2,
-  description: 'Diagnóstico de ruidos en suspensión',
-  status: 'pending',
-  date: Date.current,
-  cost_cents: 80000, # $800
-  priority: 'medium'
-)
+# Actualizar estadísticas finales de vehículos
+Vehicle.all.each do |v|
+  vehicle_stats[v.status.to_sym] += 1
+end
 
 puts "\n📊 Resumen de datos creados:"
 puts "   • Usuarios: #{User.count}"
@@ -233,20 +198,55 @@ puts "     - En progreso: #{MaintenanceService.in_progress.count}"
 puts "     - Completados: #{MaintenanceService.completed.count}"
 
 puts "\n💰 Estadísticas de costos:"
-total_cost = MaintenanceService.sum(:cost_cents) / 100.0
-puts "   • Costo total de mantenimientos: $#{total_cost.to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse}"
-puts "   • Costo promedio por servicio: $#{(total_cost / MaintenanceService.count).round(2)}"
+if MaintenanceService.any?
+  total_cost = MaintenanceService.sum(:cost_cents) / 100.0
+  avg_cost = total_cost / MaintenanceService.count
+  max_cost = MaintenanceService.maximum(:cost_cents) / 100.0
+  min_cost = MaintenanceService.minimum(:cost_cents) / 100.0
 
-vehicles_with_pending = Vehicle.joins(:maintenance_services)
-                              .where(maintenance_services: { status: ['pending', 'in_progress'] })
-                              .distinct
+  puts "   • Costo total: $#{total_cost.round(2).to_s.reverse.gsub(/(\d{3})(?=\d)/, '\\1,').reverse}"
+  puts "   • Costo promedio: $#{avg_cost.round(2)}"
+  puts "   • Costo máximo: $#{max_cost.round(2)}"
+  puts "   • Costo mínimo: $#{min_cost.round(2)}"
+end
+
 puts "\n🚦 Estado de la flota:"
-puts "   • Vehículos activos: #{Vehicle.active.count}"
-puts "   • Vehículos en mantenimiento: #{Vehicle.in_maintenance.count}"
-puts "   • Vehículos inactivos: #{Vehicle.inactive.count}"
-puts "   • Vehículos con mantenimientos pendientes: #{vehicles_with_pending.count}"
+puts "   • Vehículos activos: #{vehicle_stats[:active]}"
+puts "   • Vehículos en mantenimiento: #{vehicle_stats[:in_maintenance]}"
+puts "   • Vehículos inactivos: #{vehicle_stats[:inactive]}"
 
-puts "\n✅ Seeds ejecutados exitosamente!"
+puts "\n📈 Distribución de servicios por vehículo:"
+vehicles_without_services = Vehicle.left_joins(:maintenance_services)
+                                  .where(maintenance_services: { id: nil })
+                                  .count
+vehicles_with_many_services = Vehicle.joins(:maintenance_services)
+                                    .group('vehicles.id')
+                                    .having('COUNT(maintenance_services.id) >= 7')
+                                    .count.size
+
+puts "   • Vehículos sin servicios: #{vehicles_without_services}"
+puts "   • Vehículos con 7+ servicios: #{vehicles_with_many_services}"
+puts "   • Promedio de servicios por vehículo: #{(total_services.to_f / Vehicle.count).round(2)}"
+
+# Información sobre paginación
+puts "\n📄 Información para pruebas de paginación:"
+puts "   • Total de vehículos: #{Vehicle.count}"
+puts "   • Páginas con 20 items: #{(Vehicle.count / 20.0).ceil}"
+puts "   • Páginas con 10 items: #{(Vehicle.count / 10.0).ceil}"
+
+# Top marcas
+top_brands = Vehicle.group(:brand).count.sort_by { |_, count| -count }.first(5)
+puts "\n🏆 Top 5 marcas:"
+top_brands.each_with_index do |(brand, count), index|
+  puts "   #{index + 1}. #{brand}: #{count} vehículos"
+end
+
+puts "\n✅ Seeds extendidos ejecutados exitosamente!"
 puts "\n📝 Credenciales de acceso:"
 puts "   Email: admin@fleet.com"
 puts "   Password: password123"
+puts "\n💡 Tips para testing:"
+puts "   • Usa ?per_page=10 para ver más páginas"
+puts "   • Prueba filtros por marca: #{BRANDS.first(5).join(', ')}"
+puts "   • Años disponibles: 2015-2024"
+puts "   • Estados: active, inactive, in_maintenance"
