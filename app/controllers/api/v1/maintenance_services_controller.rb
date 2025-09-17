@@ -6,14 +6,14 @@ module Api
 
       def index
         @services = @vehicle.maintenance_services.order(date: :desc)
-        render json: @services
+        render json: @services, each_serializer: MaintenanceServiceSerializer
       end
 
       def create
         @service = @vehicle.maintenance_services.build(maintenance_service_params)
 
         if @service.save
-          render json: @service, status: :created
+          render json: @service, serializer: MaintenanceServiceSerializer, status: :created
         else
           render_validation_errors(@service)
         end
@@ -21,7 +21,7 @@ module Api
 
       def update
         if @service.update(maintenance_service_params)
-          render json: @service
+          render json: @service, serializer: MaintenanceServiceSerializer
         else
           render_validation_errors(@service)
         end

@@ -10,20 +10,23 @@ module Api
         @pagy, @vehicles = pagy(@vehicles, limit: params[:per_page] || 20)
 
         render json: {
-          vehicles: @vehicles,
+          vehicles: ActiveModelSerializers::SerializableResource.new(
+            @vehicles,
+            each_serializer: VehicleSerializer
+          ),
           meta: pagy_metadata(@pagy)
         }
       end
 
       def show
-        render json: @vehicle
+        render json: @vehicle, serializer: VehicleSerializer
       end
 
       def create
         @vehicle = Vehicle.new(vehicle_params)
 
         if @vehicle.save
-          render json: @vehicle, status: :created
+          render json: @vehicle, serializer: VehicleSerializer, status: :created
         else
           render_validation_errors(@vehicle)
         end
@@ -31,7 +34,7 @@ module Api
 
       def update
         if @vehicle.update(vehicle_params)
-          render json: @vehicle
+          render json: @vehicle, serializer: VehicleSerializer
         else
           render_validation_errors(@vehicle)
         end
