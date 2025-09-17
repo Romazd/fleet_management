@@ -1,0 +1,54 @@
+<%= form_with(model: vehicle) do |form| %>
+  <% if vehicle.errors.any? %>
+    <div class="alert alert-danger">
+      <h4><%= vehicle.errors.count %> <%= vehicle.errors.count == 1 ? 'error impidió' : 'errores impidieron' %> que este vehículo sea guardado:</h4>
+      <ul>
+        <% vehicle.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="form-group">
+    <%= form.label :vin, "VIN" %>
+    <%= form.text_field :vin, class: 'form-control', required: true,
+        placeholder: "ej., 1HGBH41JXMN109186" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :plate, "Placa" %>
+    <%= form.text_field :plate, class: 'form-control', required: true,
+        placeholder: "ej., ABC-1234" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :brand, "Marca" %>
+    <%= form.text_field :brand, class: 'form-control', required: true,
+        placeholder: "ej., Toyota" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :model, "Modelo" %>
+    <%= form.text_field :model, class: 'form-control', required: true,
+        placeholder: "ej., Camry" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :year, "Año" %>
+    <%= form.number_field :year, class: 'form-control', required: true,
+        min: 1990, max: 2050, placeholder: "ej., 2020" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :status, "Estado" %>
+    <%= form.select :status,
+        options_for_select([['Activo', 'active'], ['Inactivo', 'inactive'], ['En Mantenimiento', 'in_maintenance']], vehicle.status),
+        {}, class: 'form-control' %>
+  </div>
+
+  <div class="form-actions">
+    <%= form.submit vehicle.new_record? ? t('vehicles.form.save') : t('vehicles.form.update'), class: 'btn btn-primary' %>
+    <%= link_to t('vehicles.form.cancel'), vehicles_path, class: 'btn' %>
+  </div>
+<% end %>

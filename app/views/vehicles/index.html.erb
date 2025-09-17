@@ -1,0 +1,47 @@
+<div class="container">
+  <div class="header">
+    <h1><%= t('vehicles.index.title') %></h1>
+    <%= link_to t('vehicles.index.new_vehicle'), new_vehicle_path, class: 'btn btn-primary' %>
+  </div>
+
+  <% if @vehicles.any? %>
+    <table class="table">
+      <thead>
+        <tr>
+          <th>VIN</th>
+          <th>Placa</th>
+          <th>Marca</th>
+          <th>Modelo</th>
+          <th>Año</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @vehicles.each do |vehicle| %>
+          <tr>
+            <td><%= vehicle.vin %></td>
+            <td><%= vehicle.plate %></td>
+            <td><%= vehicle.brand %></td>
+            <td><%= vehicle.model %></td>
+            <td><%= vehicle.year %></td>
+            <td>
+              <span class="status-badge status-<%= vehicle.status %>">
+                <%= I18n.t("vehicle.status.#{vehicle.status}", default: vehicle.status.humanize) %>
+              </span>
+            </td>
+            <td>
+              <%= link_to t('vehicles.actions.view'), vehicle, class: 'btn btn-sm' %>
+              <%= link_to t('vehicles.actions.edit'), edit_vehicle_path(vehicle), class: 'btn btn-sm' %>
+              <%= button_to t('vehicles.actions.delete'), vehicle, method: :delete,
+                  data: { confirm: '¿Está seguro?' },
+                  class: 'btn btn-sm btn-danger' %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% else %>
+    <p class="empty-message">No se encontraron vehículos. <%= link_to 'Crear el primero', new_vehicle_path %>.</p>
+  <% end %>
+</div>

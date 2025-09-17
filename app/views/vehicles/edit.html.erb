@@ -1,0 +1,16 @@
+<div class="container">
+  <div class="header">
+    <h1><%= t('vehicles.edit.title') %></h1>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <%= render 'form', vehicle: @vehicle %>
+    </div>
+  </div>
+
+  <div class="actions">
+    <%= link_to t('vehicles.actions.view'), @vehicle, class: 'btn' %>
+    <%= link_to t('vehicles.actions.back'), vehicles_path, class: 'btn' %>
+  </div>
+</div>
