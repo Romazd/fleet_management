@@ -448,6 +448,65 @@
       "name": "Maintenance Services",
       "item": [
         {
+          "name": "Crear Vehículo para Servicios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 201', () => {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Vehículo creado para servicios', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response).to.have.property('id');",
+                  "    ",
+                  "    // Guardar ID para usar en tests de servicios",
+                  "    pm.environment.set('vehicleId', response.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generar VIN y placa únicos para vehículo de prueba",
+                  "const timestamp = new Date().getTime();",
+                  "const randomVin = 'SVC' + timestamp;",
+                  "const randomPlate = 'SVC' + Math.floor(Math.random() * 9999);",
+                  "",
+                  "pm.variables.set('randomVin', randomVin);",
+                  "pm.variables.set('randomPlate', randomPlate);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"vehicle\": {\n        \"vin\": \"{{randomVin}}\",\n        \"plate\": \"{{randomPlate}}\",\n        \"brand\": \"Honda\",\n        \"model\": \"Accord\",\n        \"year\": 2022,\n        \"status\": \"active\"\n    }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vehicles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "vehicles"]
+            },
+            "description": "Crear un vehículo para probar servicios de mantenimiento"
+          },
+          "response": []
+        },
+        {
           "name": "Listar Servicios de un Vehículo",
           "event": [
             {
