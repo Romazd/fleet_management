@@ -19,7 +19,7 @@ module Api
       end
 
       def show
-        render json: @vehicle, serializer: VehicleSerializer
+        render json: @vehicle, serializer: VehicleSerializer, include_maintenance_services: true
       end
 
       def create
